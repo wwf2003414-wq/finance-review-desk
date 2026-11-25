@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#0b0a16">
     <meta name="page-type" content="software">
     <meta name="site-kind" content="software">
-    <meta name="description" content="财经文案实时风险初筛。查看高亮原句、风险指数及改稿建议。">
-    <title>财经审稿台 1.3 · 文案风险检测</title>
+    <meta name="description" content="财经文案风险初筛。逐处选择并自定义替换，对照原稿和改稿。">
+    <title>财经审稿台 1.4 · 文案风险检测</title>
     <script>
       try {
         const theme = localStorage.getItem('finance-review-theme');
@@ -218,12 +218,51 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+    .workbench { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.workbench .editor-panel { display: flex; flex-direction: column; }
+.workbench .editor-heading { min-height: 35px; }
+.workbench .settings { min-height: 35px; }
+.preview-settings { color: var(--muted); }
+#replacement-preview { cursor: text; color: var(--ink); }
+.preview-foot { min-height: 21px; }
+#copy-status { color: var(--accent); }
+.revision-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, .43fr); align-items: start; gap: 17px; margin-top: 17px; }
+.replacement-panel { padding: 20px; }
+.replacement-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px 10px; font-size: .8125rem; }
+.replacement-actions a { white-space: nowrap; }
+.replacement-guide { color: var(--muted); font-size: .875rem; margin: 6px 0 12px; }
+.replacement-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.replacement-fieldset:disabled { opacity: .65; }
+.replacement-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding: 0; margin: 0; list-style: none; }
+.replacement-row { min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 9px; background: var(--inset); }
+.replacement-row:has(input:checked) { border-color: var(--focus); }
+.replacement-row-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 6px; }
+.replacement-option { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-width: 0; }
+.replacement-option input { width: 17px; height: 17px; flex: 0 0 auto; margin: 0; accent-color: var(--focus); cursor: pointer; }
+.replacement-word { color: var(--ink); overflow-wrap: anywhere; font-weight: 700; }
+.replacement-level, .replacement-position { color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.replacement-level.stop { color: var(--stop); }
+.replacement-level.review { color: var(--review); }
+.replacement-row-heading button { margin-left: auto; font-size: .75rem; min-height: 26px; padding: 1px 6px; }
+.replacement-input { width: 100%; min-height: 35px; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; background: var(--paper); color: var(--ink); font-size: .875rem; }
+.replacement-input::placeholder { color: var(--muted); }
+#more-replacements { margin-top: 9px; }
+@media (max-width: 950px) {
+  .replacement-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .workbench, .revision-grid { grid-template-columns: minmax(0, 1fr); }
+  .revision-grid { align-items: stretch; }
+}
+@media (max-width: 560px) {
+  .replacement-panel { padding: 13px; }
+}
     </style>
   </head>
   <body>
     <header class="topbar">
       <div class="top-inner">
-        <div class="brand"><span class="brand-mark" aria-hidden="true">∿</span><span>财经审稿台</span><span class="version" aria-label="版本 1.3">v1.3</span></div>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">∿</span><span>财经审稿台</span><span class="version" aria-label="版本 1.4">v1.4</span></div>
         <div class="top-actions">
           <button type="button" class="text-button theme-toggle" id="theme-toggle" aria-label="切换到浅色主题"><span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">浅色</span></button>
           <button type="button" class="text-button" id="about-button">评分说明</button>
@@ -234,7 +273,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     <main class="container">
       <section class="intro" aria-labelledby="page-title">
         <h1 id="page-title" data-enter>财经文案风险检测</h1>
-        <p data-enter>贴进原稿，实时查看风险原句、评分和改稿建议。</p>
+        <p data-enter>贴进原稿，查看风险原句，逐处选词替换并对照改稿。</p>
         <canvas aria-hidden="true"></canvas>
       </section>
 
@@ -263,8 +302,32 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
           </div>
         </section>
 
+        <section class="panel editor-panel" aria-labelledby="preview-title">
+          <div class="editor-heading">
+            <div><h2 id="preview-title">替换后</h2><span id="preview-changes" class="sample-label">已替换 0 处</span></div>
+            <button type="button" class="text-button" id="copy-replacement" disabled>复制版本</button>
+          </div>
+          <div class="settings preview-settings">勾选并填写后，右栏即时更新。</div>
+          <div class="editor-shell">
+            <textarea id="replacement-preview" class="editor-text draft" aria-label="替换后的文案" placeholder="替换后的文案显示在这里…" readonly spellcheck="false"></textarea>
+          </div>
+          <div class="editor-foot preview-foot"><span id="copy-status" role="status"></span><a href="#replacement-title">选择要替换的词</a></div>
+        </section>
+      </div>
+      <div class="revision-grid">
+        <section class="panel replacement-panel" aria-labelledby="replacement-title">
+          <div class="editor-heading">
+            <div><h2 id="replacement-title">选择替换词</h2><span id="replacement-stats" class="sample-label">0 处可选</span></div>
+            <div class="replacement-actions"><a href="#preview-title">查看结果</a><button type="button" class="text-button" id="reset-replacements" disabled>重置替换</button></div>
+          </div>
+          <p class="replacement-guide">逐处勾选并修改文字，可直接编辑预填建议。留空时保留原词，重叠词条以最后勾选的一处为准。</p>
+          <fieldset id="replacement-fieldset" class="replacement-fieldset" aria-label="可选风险词条">
+            <ul id="replacement-list" class="replacement-list"></ul>
+            <button type="button" class="text-button" id="more-replacements" hidden></button>
+          </fieldset>
+        </section>
         <aside class="panel score-panel" aria-labelledby="score-title">
-          <div class="score-heading"><h2 id="score-title">风险指数</h2><span class="live-indicator">实时分析</span></div>
+          <div class="score-heading"><h2 id="score-title">原稿风险指数</h2><span class="live-indicator">实时分析</span></div>
           <div class="gauge" id="gauge" role="img" aria-label="风险指数"><div class="gauge-center"><strong id="score">—</strong><span>/ 100</span></div></div>
           <div class="verdict" id="verdict" aria-live="polite">等待输入</div>
           <p id="summary" class="summary">输入文案后查看初筛结论。</p>
@@ -285,7 +348,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
         </div>
         <div id="findings" class="findings"></div>
       </section>
-      <footer><span>稿件在浏览器内分析，仅保留在当前页面。</span><span>规则初筛 · 语境词表 v1.3</span></footer>
+      <footer><span>稿件在浏览器内分析，仅保留在当前页面。</span><span>规则初筛 · 语境词表 221 条</span></footer>
     </main>
 
     <dialog id="about" aria-labelledby="about-title">
@@ -296,7 +359,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
         <div><dt>25–74 · 需要复核</dt><dd>检查标的、语境、数据口径或信源。原句可核实后再定稿。</dd></div>
         <div><dt>75–100 · 建议停发</dt><dd>至少命中一项严重风险，优先修改相应句子。</dd></div>
       </dl>
-      <p>当前使用本地语境规则，v1.3 加入 221 条词汇对照。改写建议须结合原意与可核实事实使用，实际提供的服务、交易引导和利益关系也需要如实处理。来源真伪、账号资质和平台实审结果需另行确认。</p>
+      <p>当前使用本地语境规则和 221 条词汇对照。改写建议须结合原意与可核实事实使用，实际提供的服务、交易引导和利益关系也需要如实处理。来源真伪、账号资质和平台实审结果需另行确认。</p>
       <div class="sources"><a href="https://www.cac.gov.cn/2026-04/24/c_1778769008779432.htm" target="_blank" rel="noopener noreferrer">金融产品网络营销管理办法</a><a href="https://finance.sina.com.cn/wm/2026-09-15/doc-inirxhzs6896470.shtml" target="_blank" rel="noopener noreferrer">小红书金融生态公约</a><a href="https://www.cac.gov.cn/2023-07/10/c_1690638496047430.htm" target="_blank" rel="noopener noreferrer">自媒体信息真实性要求</a></div>
     </dialog>
     <script>
@@ -640,7 +703,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     'giu',
   );
   const patchTemplatePatterns = patchTemplates.map(row => [
-    new RegExp(escapePatchTerm(row[0]).replace(/某[价点]/, `\\s*${patchPrice}\\s*`).replace('到', '(?:到|到了)'), 'gu'),
+    new RegExp(escapePatchTerm(row[0]).replace(/某[价点]/, `\\s*${patchPrice}\\s*`).replace('到', '(?:价格)?到了?').replace(/买$/, '买(?:入|进)?').replace(/卖$/, '卖(?:出)?'), 'gu'),
     row,
   ]);
 
@@ -657,7 +720,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
       // Keep the original severity when an existing rule already covers these words.
       const overlapping = findings.find(item => item.category === group && item.ranges.some(hit => hit.start < range.end && range.start < hit.end))
         || findings.find(item => item.level !== 'note' && item.ranges.some(hit => hit.start < range.end && range.start < hit.end));
-      const patch = { term, value: match[0], suggestion };
+      const patch = { ...range, term, value: match[0], suggestion };
       if (overlapping) {
         (overlapping.patches ??= []).push(patch);
         continue;
@@ -1136,6 +1199,213 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     findings.replaceChildren(fragment);
   }
 
+  function createReplacementEditor() {
+    const preview = byId('replacement-preview');
+    const choicesList = byId('replacement-list');
+    const choiceStats = byId('replacement-stats');
+    const changesLabel = byId('preview-changes');
+    const copyButton = byId('copy-replacement');
+    const copyStatus = byId('copy-status');
+    const resetButton = byId('reset-replacements');
+    const moreButton = byId('more-replacements');
+    const rowsPerPage = 24;
+    let source = '';
+    let candidates = [];
+    let choices = new Map();
+    let visibleCount = rowsPerPage;
+    let pending = false;
+
+    const keyFor = ({ start, end }) => `${start}:${end}`;
+    const overlaps = (left, right) => left.start < right.end && right.start < left.end;
+
+    function collectCandidates(findings) {
+      const risk = findings.filter(item => item.level !== 'note');
+      const suggested = risk.flatMap(item => (item.patches ?? []).map(patch => ({
+        start: patch.start, end: patch.end, value: patch.value,
+        level: item.level, suggestion: patch.suggestion,
+      }))).sort((left, right) => left.start - right.start || right.end - left.end);
+      const raw = risk.flatMap(item => item.ranges.map(range => ({
+        ...range, value: source.slice(range.start, range.end), level: item.level, suggestion: '',
+      }))).sort((left, right) => left.start - right.start);
+
+      // Prefer a complete matched phrase over a shorter rule highlight it already contains.
+      const result = new Map();
+      let suggestionIndex = 0;
+      let coveredThrough = -1;
+      function add(candidate) {
+        const key = keyFor(candidate);
+        const previous = result.get(key);
+        if (!previous) result.set(key, candidate);
+        else if (ranks[candidate.level] > ranks[previous.level]) previous.level = candidate.level;
+      }
+      suggested.forEach(add);
+      for (const candidate of raw) {
+        while (suggestionIndex < suggested.length && suggested[suggestionIndex].start <= candidate.start) {
+          coveredThrough = Math.max(coveredThrough, suggested[suggestionIndex++].end);
+        }
+        if (candidate.end > coveredThrough) add(candidate);
+        else if (result.has(keyFor(candidate))) add(candidate);
+      }
+      return [...result.values()].sort((left, right) => left.start - right.start || right.end - left.end);
+    }
+
+    function updateSource(next) {
+      if (source === next) return;
+      let prefix = 0;
+      while (prefix < source.length && prefix < next.length && source[prefix] === next[prefix]) prefix++;
+      let previousEnd = source.length;
+      let nextEnd = next.length;
+      while (previousEnd > prefix && nextEnd > prefix && source[previousEnd - 1] === next[nextEnd - 1]) {
+        previousEnd--;
+        nextEnd--;
+      }
+      const moved = nextEnd - previousEnd;
+      const retained = new Map();
+      for (const choice of choices.values()) {
+        if (choice.end <= prefix) retained.set(keyFor(choice), choice);
+        else if (choice.start >= previousEnd) {
+          const shifted = { ...choice, start: choice.start + moved, end: choice.end + moved };
+          retained.set(keyFor(shifted), shifted);
+        }
+      }
+      choices = retained;
+      source = next;
+    }
+
+    function renderPreview() {
+      let offset = 0;
+      const parts = [];
+      let selected = 0;
+      let applied = 0;
+      if (!pending) {
+        for (const candidate of candidates) {
+          const choice = choices.get(keyFor(candidate));
+          if (!choice?.selected) continue;
+          selected++;
+          if (!choice.text.trim() || choice.text === candidate.value) continue;
+          parts.push(source.slice(offset, candidate.start), choice.text);
+          offset = candidate.end;
+          applied++;
+        }
+      }
+      parts.push(source.slice(offset));
+      const result = parts.join('');
+      if (preview.value !== result) preview.value = result;
+      changesLabel.textContent = pending ? '正在更新' : `已替换 ${locale.format(applied)} 处`;
+      choiceStats.textContent = pending ? '正在重新检测原稿…' : `${locale.format(candidates.length)} 处可选 · 已勾选 ${locale.format(selected)} 处`;
+      copyButton.disabled = pending || !result;
+      resetButton.disabled = pending || !choices.size;
+      copyStatus.textContent = '';
+    }
+
+    function createRow(candidate) {
+      const key = keyFor(candidate);
+      const saved = choices.get(key);
+      const row = element('li', '', 'replacement-row');
+      const check = element('input');
+      check.type = 'checkbox';
+      check.checked = Boolean(saved?.selected);
+      const title = element('label', '', 'replacement-option');
+      title.append(check, element('span', candidate.value, 'replacement-word'));
+      const level = element('span', labels[candidate.level], `replacement-level ${candidate.level}`);
+      const position = element('span', `第 ${locale.format(candidate.start + 1)} 字符`, 'replacement-position');
+      const locateButton = element('button', '定位', 'text-button');
+      locateButton.type = 'button';
+      locateButton.setAttribute('aria-label', `定位「${candidate.value}」第 ${candidate.start + 1} 字符`);
+      locateButton.addEventListener('click', () => locate(candidate));
+      const header = element('div', '', 'replacement-row-heading');
+      header.append(title, level, position, locateButton);
+      const field = element('input', '', 'replacement-input');
+      field.type = 'text';
+      field.value = saved?.text ?? candidate.suggestion;
+      field.placeholder = '输入想要的替换文字';
+      field.setAttribute('aria-label', `替换「${candidate.value}」第 ${candidate.start + 1} 字符的文字`);
+      check.setAttribute('aria-label', `勾选「${candidate.value}」第 ${candidate.start + 1} 字符`);
+      row.append(header, field);
+
+      function saveChoice() {
+        choices.set(key, { start: candidate.start, end: candidate.end, selected: check.checked, text: field.value });
+      }
+      field.addEventListener('input', () => { saveChoice(); renderPreview(); });
+      check.addEventListener('change', () => {
+        if (check.checked) {
+          for (const [otherKey, choice] of choices) {
+            if (otherKey !== key && choice.selected && overlaps(choice, candidate)) choice.selected = false;
+          }
+        }
+        saveChoice();
+        for (const input of choicesList.querySelectorAll('[data-replacement-key]')) {
+          input.checked = Boolean(choices.get(input.dataset.replacementKey)?.selected);
+        }
+        renderPreview();
+      });
+      check.dataset.replacementKey = key;
+      return row;
+    }
+
+    function renderRows() {
+      const rows = candidates.slice(0, visibleCount).map(createRow);
+      if (!rows.length) rows.push(element('li', source.trim() ? '当前原稿没有需要选择的风险词条。' : '输入原稿后，这里会列出可替换的风险词条。', 'empty'));
+      choicesList.replaceChildren(...rows);
+      const remaining = candidates.length - visibleCount;
+      moreButton.hidden = remaining <= 0;
+      moreButton.textContent = `再显示 ${Math.min(rowsPerPage, Math.max(0, remaining))} 处`;
+    }
+
+    moreButton.addEventListener('click', () => {
+      const previousCount = visibleCount;
+      visibleCount += rowsPerPage;
+      const fragment = document.createDocumentFragment();
+      candidates.slice(previousCount, visibleCount).forEach(candidate => fragment.append(createRow(candidate)));
+      choicesList.append(fragment);
+      const remaining = candidates.length - visibleCount;
+      moreButton.hidden = remaining <= 0;
+      moreButton.textContent = `再显示 ${Math.min(rowsPerPage, Math.max(0, remaining))} 处`;
+      choicesList.children[previousCount]?.querySelector('input')?.focus();
+    });
+
+    resetButton.addEventListener('click', () => {
+      choices.clear();
+      renderRows();
+      renderPreview();
+    });
+
+    copyButton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(preview.value);
+        copyStatus.textContent = '已复制';
+      } catch {
+        preview.focus();
+        preview.select();
+        const copied = document.execCommand('copy');
+        copyStatus.textContent = copied ? '已复制' : '已选中，请手动复制';
+      }
+    });
+
+    return {
+      reset() {
+        choices.clear();
+        visibleCount = rowsPerPage;
+      },
+      inputChanged() {
+        updateSource(draft.value);
+        pending = true;
+        byId('replacement-fieldset').disabled = true;
+        renderPreview();
+      },
+      refresh(findings) {
+        updateSource(draft.value);
+        candidates = collectCandidates(findings);
+        pending = false;
+        byId('replacement-fieldset').disabled = false;
+        renderRows();
+        renderPreview();
+      },
+    };
+  }
+
+  const replacements = createReplacementEditor();
+
   function refresh() {
     clearTimeout(analysisTimer);
     analysis = analyze(draft.value, { platform: platform.value, channel: channel.value });
@@ -1156,6 +1426,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     byId('summary').textContent = result[1];
     renderHighlights();
     renderFindings();
+    replacements.refresh(analysis.findings);
   }
 
   function updateFilter(value) {
@@ -1165,6 +1436,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
   }
 
   function loadText(text, demo, focus) {
+    replacements.reset();
     draft.value = text;
     draft.scrollTop = 0;
     isDemo = demo;
@@ -1180,6 +1452,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     isDemo = false;
     limit = pageSize;
     clearTimeout(analysisTimer);
+    replacements.inputChanged();
     if (!composing) analysisTimer = setTimeout(refresh, 100);
   }
 
