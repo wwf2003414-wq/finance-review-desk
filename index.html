@@ -7,7 +7,7 @@
     <meta name="page-type" content="software">
     <meta name="site-kind" content="software">
     <meta name="description" content="财经文案实时风险初筛。查看高亮原句、风险指数及改稿建议。">
-    <title>财经审稿台 1.2 · 文案风险检测</title>
+    <title>财经审稿台 1.3 · 文案风险检测</title>
     <script>
       try {
         const theme = localStorage.getItem('finance-review-theme');
@@ -174,6 +174,11 @@ mark.note { background: var(--note-soft); box-shadow: inset 0 -1px var(--note); 
 .finding blockquote { background: var(--inset); border-left: 2px solid var(--tone); margin: 9px 0; padding: 7px 9px; font-size: .9375rem; overflow-wrap: anywhere; }
 .finding p { font-size: .875rem; margin: 7px 0; color: var(--muted); }
 .finding p strong { color: var(--ink); }
+.patch-references { margin-top: 10px; padding: 9px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
+.patch-references strong { color: var(--accent); }
+.patch-references ul { margin: 4px 0 0; padding-left: 1.3em; }
+.patch-references li + li { margin-top: 4px; }
+.patch-references b { color: var(--ink); }
 .finding-foot { justify-content: space-between; margin-top: 10px; }
 .finding-foot a { font-size: .8125rem; }
 .finding-foot button { margin-left: auto; }
@@ -218,7 +223,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
   <body>
     <header class="topbar">
       <div class="top-inner">
-        <div class="brand"><span class="brand-mark" aria-hidden="true">∿</span><span>财经审稿台</span><span class="version" aria-label="版本 1.2">v1.2</span></div>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">∿</span><span>财经审稿台</span><span class="version" aria-label="版本 1.3">v1.3</span></div>
         <div class="top-actions">
           <button type="button" class="text-button theme-toggle" id="theme-toggle" aria-label="切换到浅色主题"><span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">浅色</span></button>
           <button type="button" class="text-button" id="about-button">评分说明</button>
@@ -280,7 +285,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
         </div>
         <div id="findings" class="findings"></div>
       </section>
-      <footer><span>稿件在浏览器内分析，仅保留在当前页面。</span><span>规则初筛 · 规则基线 2026-11-25</span></footer>
+      <footer><span>稿件在浏览器内分析，仅保留在当前页面。</span><span>规则初筛 · 语境词表 v1.3</span></footer>
     </main>
 
     <dialog id="about" aria-labelledby="about-title">
@@ -291,7 +296,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
         <div><dt>25–74 · 需要复核</dt><dd>检查标的、语境、数据口径或信源。原句可核实后再定稿。</dd></div>
         <div><dt>75–100 · 建议停发</dt><dd>至少命中一项严重风险，优先修改相应句子。</dd></div>
       </dl>
-      <p>当前使用本地语境规则。来源真伪、账号资质和平台实审结果需要另外确认。</p>
+      <p>当前使用本地语境规则，v1.3 加入 221 条词汇对照。改写建议须结合原意与可核实事实使用，实际提供的服务、交易引导和利益关系也需要如实处理。来源真伪、账号资质和平台实审结果需另行确认。</p>
       <div class="sources"><a href="https://www.cac.gov.cn/2026-04/24/c_1778769008779432.htm" target="_blank" rel="noopener noreferrer">金融产品网络营销管理办法</a><a href="https://finance.sina.com.cn/wm/2026-09-15/doc-inirxhzs6896470.shtml" target="_blank" rel="noopener noreferrer">小红书金融生态公约</a><a href="https://www.cac.gov.cn/2023-07/10/c_1690638496047430.htm" target="_blank" rel="noopener noreferrer">自媒体信息真实性要求</a></div>
     </dialog>
     <script>
@@ -380,6 +385,299 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     const suffix = text.slice(range.end, range.end + 27);
     const priorClause = text.slice(Math.max(0, range.start - 14), range.start);
     return cautionBefore.test(lead) || cautionAfter.test(suffix) || /不建议|不要|别|切忌|不能|请勿|不要承诺|谨慎对待/i.test(priorClause);
+  }
+
+  const contextPatchRules = {
+    trade: ['交易指令措辞待核', '原句可能把市场观察写成面向观众的操作指令。', '去掉下单动作、入场点位和仓位指令，写明观察依据。', 'consultation'],
+    forecast: ['走势判断措辞待核', '原句可能把带条件的市场判断写成确定结果。', '区分公开事实和个人判断，注明依据、条件与时间。', 'evidence'],
+    allegation: ['指控措辞待核', '原句涉及操纵、欺诈或其他尚待证实的指控。', '核对公开文件。按文件所支持的事实，写清提出方、依据与进展。', 'evidence'],
+    motive: ['资金动机措辞待核', '原句可能把未公开验证的交易方或动机写成事实。', '先交代已知的价格、成交和来源，再标明推断。', 'evidence'],
+    numbers: ['极端判断措辞待核', '原句涉及极值、重大市场变化或企业状态。', '查公开出处、时间和比较口径，按证据表述。', 'evidence'],
+    rumor: ['消息出处或背书待核', '原句涉及未公开消息、独家渠道或机构背书。', '核实消息和授权来源，写清发布主体、原文与可确认的范围。', 'evidence'],
+    referral: ['金融导流措辞待核', '原句可能涉及荐股、咨询或金融服务承接。', '核对服务和承接方式，移除未核实的导流与招揽。', 'consultation'],
+    offshore: ['开户或入金措辞待核', '原句可能涉及开户、入金、返佣或渠道中介。', '核验渠道、资质与适用地区。移除不明资质的承接。', 'crossBorder'],
+    custody: ['代客服务措辞待核', '原句可能涉及操作他人账户、收钱或收益分成。', '核实主体资格，移除不明资质的代操、收款或交出账户的安排。', 'consultation'],
+    crypto: ['交易入口措辞待核', '原句可能涉及兑换、交易、开户或返佣。', '区分科普与招揽，核实上下文涉及的资产、平台和行为。', 'crypto'],
+    debt: ['金融黑灰产措辞待核', '原句可能涉及征信造假、套现或其他违规金融服务。', '移除违规服务承诺，按实际情况使用正规查询、异议和投诉渠道。', 'debt'],
+    identity: ['身份或授权措辞待核', '原句涉及专业身份、机构授权或仿冒。', '核对真实主体、正式登记及可查证的授权。', 'account'],
+    wording: ['术语或表达提示', '这处措辞需要结合全文语境判断。', '核对原意和具体主体，再决定是否调整。', null],
+  };
+
+  const contextPatchRows = [
+    ["直接买","先看看目前的价格和成交情况","trade"],
+    ["直接卖","先观察价格有没有继续走弱","trade"],
+    ["直接买入","可以看看这段行情是怎么启动的","trade"],
+    ["直接卖出","可以看看这段行情为什么回落","trade"],
+    ["直接做空","我对后面的走势偏谨慎","trade"],
+    ["直接做多","我对后续走势相对乐观","trade"],
+    ["直接上车","可以先留意这个方向的变化","trade"],
+    ["直接梭哈","仓位越集中受到波动的影响越大","trade"],
+    ["到某价就买","可以关注价格接近这个区间后的变化","trade"],
+    ["到某价就卖","可以观察接近这个区间后的成交变化","trade"],
+    ["某点就进场","这个价位可以用来观察行情变化","trade"],
+    ["某点就加仓","看看这个价位附近成交有没有放大","trade"],
+    ["挂单买","可以回看买盘在什么价位出现","trade"],
+    ["挂单卖","可以回看卖盘在什么价位增加","trade"],
+    ["马上买","先看看眼下的价格和基本面","trade"],
+    ["立刻卖","先看波动背后的原因","trade"],
+    ["逢高卖","可以观察反弹后卖压是否增加","trade"],
+    ["逢低买","可以观察回落后有没有企稳","trade"],
+    ["建议现在买入","我会继续关注这个标的的走势","trade"],
+    ["等反弹再做空","我会先看这次反弹能不能持续","trade"],
+    ["做空机会","这里仍有下行压力","trade"],
+    ["手慢无","供应情况以页面实时显示为准","trade"],
+    ["目标价","观察用的参考价位","forecast"],
+    ["入场价","案例里的起始价格","forecast"],
+    ["止盈位","当时的区间高点","forecast"],
+    ["止损位","分析用的下行参考位","forecast"],
+    ["跌破某点就卖","可以看跌破这个价位后卖压是否增加","trade"],
+    ["突破某点就买","可以看突破这个价位后成交有没有放大","trade"],
+    ["回踩某点就加仓","可以观察回到这个价位后是否企稳","trade"],
+    ["第一站","先观察这个价位附近的表现","forecast"],
+    ["第二站","后续再看另一个参考区间","forecast"],
+    ["必涨","在这些条件下有走高的可能","forecast"],
+    ["一定涨","走势是否转强还要看后续数据","forecast"],
+    ["指定涨停","可以关注盘中涨幅有没有扩大","forecast"],
+    ["要翻倍","在乐观情景下还有上行空间","forecast"],
+    ["必跌","如果这些条件持续可能继续承压","forecast"],
+    ["肯定跌","走势偏弱但还要看后续变化","forecast"],
+    ["预计上涨","按目前的假设可能走强","forecast"],
+    ["预计下跌","在这个情景下有回落的可能","forecast"],
+    ["有望上涨","如果条件改善可能走高","forecast"],
+    ["有望下跌","如果压力持续可能回落","forecast"],
+    ["大概率反弹","在这些条件下可能出现反弹","forecast"],
+    ["大概率偏空","在这个情景下我会看得偏谨慎","forecast"],
+    ["buy now","watch how prices move from here","trade"],
+    ["sell at","look back at what happened around that price","trade"],
+    ["go short now","the outlook still looks uncertain","trade"],
+    ["copy my trades","let’s review this historical example","trade"],
+    ["short every bounce","a rebound alone does not settle the trend","trade"],
+    ["price target","a reference price from the historical record","forecast"],
+    ["exit target","a price level worth reviewing","forecast"],
+    ["假离职","这次人员变动","allegation"],
+    ["策划假离职","这次离职消息的来龙去脉","allegation"],
+    ["策划假辞职","辞职一事的具体经过还待核实","allegation"],
+    ["骗割肉","下跌时部分投资者选择卖出","allegation"],
+    ["诱骗割肉","部分投资者在下跌中亏损卖出","allegation"],
+    ["借机收割散户","这波下跌给部分散户带来了损失","allegation"],
+    ["操纵股价","股价波动明显","allegation"],
+    ["操纵市场","市场的异常波动值得核查","allegation"],
+    ["操纵金价","金价在盘中明显波动","allegation"],
+    ["勾结砸盘","卖压在盘中同时加大","allegation"],
+    ["合谋做局","各方之间是否有联系还待确认","allegation"],
+    ["联合砸盘","多个时段出现集中卖出","allegation"],
+    ["合谋吸筹","成交放大但买入方还有待确认","allegation"],
+    ["造假做局","相关说法还需要用公开证据核实","allegation"],
+    ["官方造假","官方数据的统计口径需要核对","allegation"],
+    ["策划假消息","消息出处和传播经过还待核实","allegation"],
+    ["借机故意爆仓","急跌期间部分账户面临强平风险","allegation"],
+    ["fake resignation","the reported leadership change","allegation"],
+    ["rigged","the causes of the move remain unclear","allegation"],
+    ["manipulated","moved sharply for reasons still unclear","allegation"],
+    ["pump and dump","a sharp rise followed by a sell-off","allegation"],
+    ["tricked investors","investors sold at a loss during the decline","allegation"],
+    ["主力收割","部分投资者在波动中受到损失","motive"],
+    ["大资金吸筹","低位成交放大但资金来源待核","motive"],
+    ["机构撤单","机构是否撤单还要看公开数据","motive"],
+    ["华尔街出货","美股盘中卖压加大","motive"],
+    ["大资金在扫","盘中成交突然放大","motive"],
+    ["主力扫止损","盘中一度跌得很快","motive"],
+    ["精准猎取","这个价位附近波动明显放大","motive"],
+    ["机构逼仓","持仓变化与价格走势需要分开看","motive"],
+    ["秘密采购","部分采购没有反映在公开数据中","motive"],
+    ["割韭菜","部分参与者最终承受了亏损","motive"],
+    ["stop hunt","a sudden move through that price range","motive"],
+    ["liquidity grab","a sharp move during a thinly traded period","motive"],
+    ["史上最大","规模在同类案例中比较突出","numbers"],
+    ["史上最惨","这段时间表现比较弱","numbers"],
+    ["几十年未见","这种幅度在历史数据中比较少见","numbers"],
+    ["几十年来最快","这一次变化的速度比较快","numbers"],
+    ["全部回吐","此前的涨幅有所收窄","numbers"],
+    ["全吐回","之前的上涨后来出现了回落","numbers"],
+    ["全线失守","多个市场或板块同步走弱","numbers"],
+    ["彻底崩盘","市场短时间内明显下跌","numbers"],
+    ["史诗级反弹","这一轮反弹的幅度比较大","numbers"],
+    ["市场已死","市场交易活跃度明显下降","numbers"],
+    ["全国都没钱","部分地区资金面出现压力","numbers"],
+    ["资金链断裂","公司面临一定的流动性压力","numbers"],
+    ["倒闭","公司的经营情况仍需核实","numbers"],
+    ["停兑","相关产品的兑付进展还有待确认","numbers"],
+    ["跑路","相关负责人目前尚未公开回应","numbers"],
+    ["largest IPO ever","one of the larger IPOs in the period","numbers"],
+    ["record high","a relatively high level for the period","numbers"],
+    ["all gains erased","prices gave back some of their earlier gains","numbers"],
+    ["内部消息","目前能查到的公开消息","rumor"],
+    ["内幕消息","相关消息目前还没得到证实","rumor"],
+    ["内幕信息","公告中已经披露的信息","rumor"],
+    ["内部文件","可查阅的公开文件","rumor"],
+    ["独家渠道","可以公开查询的渠道","rumor"],
+    ["独家爆料","有明确出处的报道","rumor"],
+    ["insider tip","information available from public sources","rumor"],
+    ["官方指定","公开名单中明确列出的","rumor"],
+    ["监管背书","已披露的监管手续","rumor"],
+    ["央行背书","央行公告中提到的安排","rumor"],
+    ["证监会背书","证监会公开披露的相关信息","rumor"],
+    ["国企兜底","与国企有公开披露的合作关系","rumor"],
+    ["国资兜底","股东里有国资背景的机构","rumor"],
+    ["私信我领代码","相关公开资料放在正文里","referral"],
+    ["私信我领策略","正文里会讲这个方法的来龙去脉","referral"],
+    ["进群领选股策略","这期会用历史案例讲选股思路","referral"],
+    ["加助理领名额","活动资格和安排见公开页面","referral"],
+    ["扫码开户","开户条件可以查看机构公开说明","referral"],
+    ["二维码引导入金","可以先了解资金转入的规则和风险","referral"],
+    ["发口令领取通道","相关说明可以在公开页面查阅","referral"],
+    ["免费诊股","今天用公开案例讲一个分析方法","referral"],
+    ["推荐黑马","我们来看看这个行业的代表案例","referral"],
+    ["收费荐股","可以学习通用的分析方法","referral"],
+    ["免费看股","可以一起复盘市场过去怎么走","referral"],
+    ["策略信号","这是复盘时可以观察的一个指标","referral"],
+    ["进场信息","可以回看交易当时的历史数据","referral"],
+    ["实盘指导","我们用已经结束的交易做案例","referral"],
+    ["群费","课程费用以公开页面为准","referral"],
+    ["领诊股","正文里有一个完整的分析案例","referral"],
+    ["领代码","资料来源在正文里可以查到","referral"],
+    ["领策略","文章里会说明这个方法的思路","referral"],
+    ["领选股","我们看看怎样做基础筛选","referral"],
+    ["领通道","公开渠道及条件见官方说明","referral"],
+    ["领取免费资料","资料可以到原发布页面查看","referral"],
+    ["跟单","可以参考这笔交易的复盘","referral"],
+    ["带单","这里用历史案例讲风险","referral"],
+    ["代客操作","实际服务范围以资质公示为准","custody"],
+    ["付费跟单","课程内容以通用策略讨论为主","referral"],
+    ["DM me","see the public resources in the article","referral"],
+    ["paid Discord","the publicly available course materials","referral"],
+    ["stock picks","historical examples for comparison","referral"],
+    ["开户链接","相关开户条件和适用地区","offshore"],
+    ["开户返佣","开户涉及的费用和利益关系","offshore"],
+    ["邀请码","报名条件见公开说明","offshore"],
+    ["代开户","开户需要本人按要求办理","offshore"],
+    ["开户代办","开户流程以机构公布的信息为准","offshore"],
+    ["帮你开户","可以先了解开户所需材料","offshore"],
+    ["找我开户","请通过官方渠道查询办理要求","offshore"],
+    ["带你开户","这里介绍一般开户流程","offshore"],
+    ["代开账户","账户由本人提交开立申请","offshore"],
+    ["教你入金","先了解资金转入的规定和风险","offshore"],
+    ["进群入金","资金办理以官方公布的规则为准","offshore"],
+    ["代办入金","资金由本人通过正规渠道办理","offshore"],
+    ["加我入金","转款前先核实机构和收款账户","offshore"],
+    ["绕过地域","以各地区的适用规定为准","offshore"],
+    ["借额度","请按本人适用的额度办理","offshore"],
+    ["换汇通道","可以通过银行等正规渠道换汇","offshore"],
+    ["地下钱庄","使用未经许可的换汇渠道有风险","offshore"],
+    ["代客理财","这里介绍通用的理财知识","custody"],
+    ["代客交易","这一段讲的是交易机制","custody"],
+    ["代客操盘","我们可以复盘这笔历史交易","custody"],
+    ["帮你操盘","这里讨论这个策略的风险","custody"],
+    ["帮你买卖","可以先了解相关交易规则","custody"],
+    ["把交易账号给我","交易账号应由本人保管","custody"],
+    ["把账号发我","请妥善保管个人账户信息","custody"],
+    ["资金转给我","转账前请核实官方收款主体","custody"],
+    ["资金打给我","付款前先确认收款方身份","custody"],
+    ["账户托管","账户继续由本人管理","custody"],
+    ["盈利分成","有利益关系需要如实披露","custody"],
+    ["跟单分成","交易相关费用需要事先说清","custody"],
+    ["返佣码","涉及推广的利益关系需要公开","crypto"],
+    ["兑换入口","先了解这类兑换的合规风险","crypto"],
+    ["帮你兑换","这里讨论兑换涉及的风险","crypto"],
+    ["私信换币","虚拟资产兑换存在财产损失风险","crypto"],
+    ["带你炒币","这里介绍虚拟资产的波动风险","crypto"],
+    ["注册领币","先核实活动来源和项目风险","crypto"],
+    ["开合约","合约交易可能出现较大损失","crypto"],
+    ["认购码","认购条件以公开文件为准","crypto"],
+    ["点击交易","交易前要了解相关风险","crypto"],
+    ["平台开户","先了解平台是否具备相应资质","crypto"],
+    ["邀你开户","可以先阅读机构公开的开户条件","crypto"],
+    ["私信领币","项目情况以公开披露为准","crypto"],
+    ["帮你洗白征信","记录有误可以提出征信异议","debt"],
+    ["删除逾期","如果记录不符可以申请核实","debt"],
+    ["征信铲单","可以向征信机构申请核查","debt"],
+    ["伪造流水","应当提交真实可核验的流水","debt"],
+    ["代做流水","可以从银行获取本人的交易记录","debt"],
+    ["非法套现","违规转出资金可能产生风险","debt"],
+    ["稳赚集资","这类筹资存在本金损失风险","debt"],
+    ["非法高息揽存","收取存款应核对机构的经营许可","debt"],
+    ["反催收包停还","还款安排可以向金融机构申请协商","debt"],
+    ["退保代办","可以本人向保险公司申请退保","referral"],
+    ["冒充证监会","可以到证监会官网核实","identity"],
+    ["冒充央行","以央行发布的原文为准","identity"],
+    ["冒充监管","应通过监管机构公开渠道核实","identity"],
+    ["冒充券商","可以通过券商官方渠道确认","identity"],
+    ["冒充律师","从正式执业信息核对身份","identity"],
+    ["冒充专家","可以核实受访者的专业背景","identity"],
+    ["仿冒名人","引用本人已经公开的发言","identity"],
+    ["仿冒领导","使用有出处的公开讲话原文","identity"],
+    ["仿冒公众人物","人物信息以公开资料为准","identity"],
+    ["官方代言人","代言身份以公开授权为准","identity"],
+    ["官方指定投顾","投顾身份可以查公开登记","identity"],
+    ["官方授权操盘","服务权限以实际授权为准","identity"],
+    ["自称首席投顾","以对外披露的投顾登记为准","identity"],
+    ["自称央行研究员","以机构公开的任职信息为准","identity"],
+    ["自称基金经理","由基金公司的公开资料确认","identity"],
+    ["黄金","保留「黄金」。若有需要，明确是现货黄金、黄金期货或其他产品。","wording"],
+    ["英伟达","可写「英伟达（NVIDIA）」，首次出现时写明公司名称。","wording"],
+    ["黄仁勋","保留全名「黄仁勋」，需要时标注相关职务和发言来源。","wording"],
+    ["Anthropic","公司写「Anthropic」，产品写「Claude」，根据实际主体选择。","wording"],
+    ["纳指","写出所指指数，例如「纳斯达克综合指数」或「纳斯达克100指数」。","wording"],
+    ["债券","保留「债券」。如实际指交易市场，可写「债券市场」。","wording"],
+    ["现金流","保留「现金流」。如有明确口径，可写「经营活动现金流」等。","wording"],
+    ["地缘影响","写清具体地缘政治事件和可核实的影响。涉及冲突时再写「地缘冲突」。","wording"],
+    ["猜测","可写「推测」或「一种可能的解释」，并说明依据和不确定性。","wording"],
+    ["美联储","机构写「美联储」。谈加息时写出决策主体与具体决定。","wording"],
+    ["涨跌","可写「价格波动」。若方向已知，写明上涨或下跌及对应时段。","wording"],
+    ["个股分析","可写「回顾这家公司的公开信息」，同时标注资料出处和日期。","wording"],
+  ];
+  const patchTerms = contextPatchRows.filter(row => !row[0].includes('某'));
+  const patchTemplates = contextPatchRows.filter(row => row[0].includes('某'));
+  const normalizePatchTerm = term => term.toLowerCase().replace(/\s+/g, ' ');
+  const escapePatchTerm = term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const patchLookup = new Map(patchTerms.map(row => [normalizePatchTerm(row[0]), row]));
+  const patchPrice = '(?:某(?:个)?(?:价位|价格|点位|价|点)|(?:[0-9０-９]+(?:[.．][0-9０-９]+)?|[零〇一二三四五六七八九十百千万两]+)\\s*(?:美元|港元|元|点位|点)?)';
+  const patchTermPattern = new RegExp(
+    patchTerms.toSorted((left, right) => right[0].length - left[0].length).map(([term]) => {
+      const literal = escapePatchTerm(term).replace(/ /g, '\\s+');
+      return /^[a-z]/i.test(term) ? `(?<![a-z0-9_])${literal}(?![a-z0-9_])` : literal;
+    }).join('|'),
+    'giu',
+  );
+  const patchTemplatePatterns = patchTemplates.map(row => [
+    new RegExp(escapePatchTerm(row[0]).replace(/某[价点]/, `\\s*${patchPrice}\\s*`).replace('到', '(?:到|到了)'), 'gu'),
+    row,
+  ]);
+
+  function applyContextPatch(unit, findings, { text, quoted, historical, hasMarket, hasProduct, support, context }) {
+    const literal = Array.from(text.matchAll(patchTermPattern), match => [match, patchLookup.get(normalizePatchTerm(match[0]))]);
+    const templates = patchTemplatePatterns.flatMap(([pattern, row]) => Array.from(text.matchAll(pattern), match => [match, row]));
+    const contextIsFinancial = hasMarket || hasProduct || /财经|盘中|价位|成交|收盘|交易|金融|征信|\b(?:stocks|equities|investors|securities|trading|finance|financial|nasdaq)\b/i.test(context);
+    for (const [match, [term, suggestion, group]] of [...literal, ...templates]) {
+      const start = match.index;
+      const end = start + match[0].length;
+      const range = { start: unit.start + start, end: unit.start + end };
+      if (group !== 'wording' && (quoted || isRefuted(text, { start, end }))) continue;
+
+      // Keep the original severity when an existing rule already covers these words.
+      const overlapping = findings.find(item => item.category === group && item.ranges.some(hit => hit.start < range.end && range.start < hit.end))
+        || findings.find(item => item.level !== 'note' && item.ranges.some(hit => hit.start < range.end && range.start < hit.end));
+      const patch = { term, value: match[0], suggestion };
+      if (overlapping) {
+        (overlapping.patches ??= []).push(patch);
+        continue;
+      }
+      const isTrade = group === 'trade' || group === 'forecast';
+      if (isTrade && (historical || !contextIsFinancial && !term.includes('某'))) continue;
+      if (group === 'numbers' && (support || !contextIsFinancial)) continue;
+      if (group === 'crypto' && !groups.crypto.test(context) && !contextIsFinancial) continue;
+      if (group === 'referral' && /^(?:群费|DM me|领策略|领取免费资料)$/i.test(term) && !contextIsFinancial) continue;
+      if (group === 'offshore' && /^(?:邀请码|绕过地域|借额度)$/.test(term) && !contextIsFinancial && !groups.overseas.test(context)) continue;
+      const existing = findings.find(item => item.category === group);
+      if (existing) {
+        existing.ranges.push(range);
+        (existing.patches ??= []).push(patch);
+        continue;
+      }
+      const [title, why, action, source] = contextPatchRules[group];
+      const level = group === 'wording' ? 'note' : 'review';
+      findings.push({ category: group, level, title, why, action, source: sources[source], points: level === 'note' ? 5 : 38, unit, ranges: [range], patches: [patch] });
+    }
   }
 
   function classify(unit, previous, options) {
@@ -484,6 +782,7 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     }
 
     // Ordinary words remain searchable and visible without inflating the score.
+    applyContextPatch(unit, out, { text, quoted, historical, hasMarket, hasProduct, support, context });
     const painted = out.flatMap((item) => item.ranges);
     const notes = spansFor(groups.neutral, text).filter(({ start, end }) => !painted.some((range) => range.start < end + unit.start && range.end > start + unit.start));
     const aliases = spansFor(groups.ambiguity, text).filter(({ start, end }) => !painted.some((range) => range.start < end + unit.start && range.end > start + unit.start));
@@ -798,7 +1097,21 @@ dialog dd { color: var(--muted); margin: 3px 0 0; }
     jump.type = 'button';
     jump.addEventListener('click', () => locate(first));
     actions.append(jump);
-    card.append(heading, quote, element('p', item.why), action, actions);
+    card.append(heading, quote, element('p', item.why), action);
+    if (item.patches?.length) {
+      const references = element('div', '', 'patch-references');
+      references.append(element('strong', '语境改写参考'));
+      const list = element('ul');
+      const shown = new Map(item.patches.map(patch => [patch.value + '\n' + patch.suggestion, patch]));
+      for (const { value, suggestion } of shown.values()) {
+        const line = element('li');
+        line.append(element('b', `「${value}」`), document.createTextNode(' ' + suggestion));
+        list.append(line);
+      }
+      references.append(list);
+      card.append(references);
+    }
+    card.append(actions);
     return card;
   }
 
